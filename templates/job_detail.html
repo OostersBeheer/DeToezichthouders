@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+  <a href="{{ url_for('index') }}" class="btn btn-link p-0 mb-3">← Terug naar overzicht</a>
+  <h1 class="h4">{{ job['title'] }}</h1>
+  <ul class="list-unstyled text-muted mb-3">
+    {% if job['company'] %}<li><strong>Organisatie:</strong> {{ job['company'] }}</li>{% endif %}
+    {% if job['location'] %}<li><strong>Locatie:</strong> {{ job['location'] }}</li>{% endif %}
+    {% if job['start_date'] %}<li><strong>Startdatum:</strong> {{ job['start_date'] }}</li>{% endif %}
+    {% if job['duration'] %}<li><strong>Duur:</strong> {{ job['duration'] }}</li>{% endif %}
+    <li><strong>Uren:</strong> {{ job['hours'] }}</li>
+    <li><strong>Tarief:</strong> €{{ '%.2f'|format(job['rate']) }}/uur</li>
+    {% if job_categories %}
+      <li><strong>Categorieën:</strong>
+        {% for slug, label in job_categories %}
+          <span class="badge text-bg-light border">{{ label }}</span>
+        {% endfor %}
+      </li>
+    {% endif %}
+  </ul>
+
+  <div class="mb-4">{{ job['description']|replace('\n','<br>')|safe }}</div>
+
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h5 mb-3">Reageer op deze opdracht</h2>
+      <form method="post" action="{{ url_for('apply', job_id=job['id']) }}" enctype="multipart/form-data" novalidate>
+        {{ form.csrf_token }}
+        <div class="mb-3">
+          <label class="form-label">Naam</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">E-mail</label>
+          <input type="email" name="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Telefoon (optioneel)</label>
+          <input type="text" name="phone" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Korte toelichting (optioneel)</label>
+          <textarea name="motivation" class="form-control" rows="4"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">CV (PDF, max 5MB, optioneel)</label>
+          <input type="file" name="cv" class="form-control" accept="application/pdf">
+        </div>
+        <button class="btn btn-primary" type="submit">Verstuur reactie</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

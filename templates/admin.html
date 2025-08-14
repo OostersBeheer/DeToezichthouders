@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">Beheer</h1>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('admin_new', pw=pw) }}">Nieuwe opdracht</a>
+  </div>
+  <h2 class="h6 mt-4">Opdrachten</h2>
+  <div class="list-group mb-4">
+    {% for job in jobs %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ job['title'] }}</strong>
+            {% if job['company'] %} — {{ job['company'] }}{% endif %}
+            {% if job['location'] %} • {{ job['location'] }}{% endif %}
+            <br>
+            {{ job['hours'] }} uur • €{{ '%.2f'|format(job['rate']) }}/uur
+            {% if job['start_date'] or job['duration'] %}<br>
+              {% if job['start_date'] %}Start: {{ job['start_date'] }}{% endif %}
+              {% if job['duration'] %} • Duur: {{ job['duration'] }}{% endif %}
+            {% endif %}
+            {% if job['categories'] %}
+              <div class="mt-1">
+                {% for c in job['categories'].split(',') if c %}
+                  <span class="badge text-bg-light border me-1">{{ c|capitalize }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+          <form method="post" action="{{ url_for('admin_delete', job_id=job['id'], pw=pw) }}" onsubmit="return confirm('Weet je zeker dat je deze opdracht wilt verwijderen?');">
+            <button class="btn btn-outline-danger btn-sm" type="submit">Verwijder</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <div class="list-group-item text-muted">Nog geen opdrachten.</div>
+    {% endfor %}
+  </div>
+
+  <h2 class="h6">Binnengekomen reacties</h2>
+  <div class="list-group">
+    {% for a in apps %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div><strong>{{ a['name'] }}</strong> — {{ a['email'] }} {% if a['phone'] %} • {{ a['phone'] }}{% endif %}</div>
+            <div class="text-muted">Op: {{ a['created_at'][:16] }} • Opdracht: {{ a['job_title'] }}</div>
+            {% if a['motivation'] %}<div class="mt-2">{{ a['motivation']|replace('\n','<br>')|safe }}</div>{% endif %}
+          </div>
+          {% if a['cv_filename'] %}
+            <div><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('uploaded_file', filename=a['cv_filename']) }}">Download CV</a></div>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="list-group-item text-muted">Nog geen reacties.</div>
+    {% endfor %}
+  </div>
+{% endblock %}

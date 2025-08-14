@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">Openstaande opdrachten</h1>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('admin') }}">Plaats opdracht</a>
+  </div>
+
+  <form method="get" class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-12">
+          <div class="fw-semibold mb-2">Filter op categorie</div>
+          <div class="d-flex flex-wrap gap-3">
+            {% for slug, label in categories %}
+              <label class="form-check">
+                <input class="form-check-input" type="checkbox" name="cat" value="{{ slug }}" {% if slug in selected %}checked{% endif %}>
+                <span class="form-check-label">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Filter toepassen</button>
+          <a class="btn btn-sm btn-link" href="{{ url_for('index') }}">Reset</a>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  {% if jobs|length == 0 %}
+    <div class="alert alert-info">Geen opdrachten gevonden met deze filters.</div>
+  {% endif %}
+
+  <div class="list-group">
+    {% for job in jobs %}
+      <a href="{{ url_for('job_detail', job_id=job['id']) }}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ job['title'] }}</h5>
+          <small>{{ job['created_at'][:10] }}</small>
+        </div>
+        <p class="mb-1">
+          {% if job['company'] %}{{ job['company'] }} • {% endif %}
+          {% if job['location'] %}{{ job['location'] }} • {% endif %}
+          Uren: {{ job['hours'] }} • Tarief: €{{ '%.2f'|format(job['rate']) }}/uur
+        </p>
+        {% set cats = (job['categories'] or '').split(',') %}
+        {% if cats and cats[0] != '' %}
+          <div class="mt-1">
+            {% for c in cats %}
+              <span class="badge text-bg-light border me-1">{{ c|capitalize }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="text-muted mt-2" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ job['description'] }}</div>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}
