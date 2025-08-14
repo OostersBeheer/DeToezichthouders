@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ job[1] }} - Vacature</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input, textarea { display: block; margin-bottom: 10px; width: 300px; padding: 5px; }
+        label { font-weight: bold; margin-top: 10px; }
+        button { padding: 5px 10px; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>{{ job[1] }}</h1>
+    <p><strong>Uren:</strong> {{ job[2] }}</p>
+    <p><strong>Tarief:</strong> {{ job[3] }}</p>
+    <p><strong>Omschrijving:</strong> {{ job[4] }}</p>
+    <p><strong>Duur:</strong> {{ job[5] }}</p>
+    <p><strong>Startdatum:</strong> {{ job[6] }}</p>
+    <p><strong>Locatie:</strong> {{ job[7] }}</p>
+    <p><strong>Bedrijf:</strong> {{ job[8] }}</p>
+
+    <h2>Reageer op deze vacature</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label>Naam</label>
+        <input type="text" name="name" required>
+
+        <label>E-mail</label>
+        <input type="email" name="email" required>
+
+        <label>Telefoon</label>
+        <input type="text" name="phone">
+
+        <label>Bericht</label>
+        <textarea name="message" rows="4"></textarea>
+
+        <button type="submit">Verstuur reactie</button>
+    </form>
+
+</body>
+</html>
