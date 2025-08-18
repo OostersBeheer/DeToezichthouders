@@ -118,6 +118,13 @@ def admin():
 
     return render_template("admin.html")
 
+# app.py
+
+from flask import render_template
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 # --- Start de app ---
 if __name__ == "__main__":
