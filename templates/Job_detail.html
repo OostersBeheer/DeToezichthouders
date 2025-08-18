@@ -1,61 +1,45 @@
 {% extends "base.html" %}
+
 {% block content %}
-  <div class="container py-4">
-    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary mb-3">&larr; Terug naar overzicht</a>
+  <div class="mb-4">
+    <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">&larr; Terug naar overzicht</a>
+  </div>
 
-    <div class="card">
-      <div class="card-body">
-        <h1 class="h4 mb-3">{{ job['title'] }}</h1>
-
-        <div class="mb-3 text-muted">
-          Geplaatst op {{ job['created_at'][:10] }}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h2 class="card-title mb-1">{{ job['title'] }}</h2>
+          <h6 class="card-subtitle text-muted">
+            {% if job['company'] %}{{ job['company'] }}{% endif %}
+            {% if job['location'] %} • {{ job['location'] }}{% endif %}
+          </h6>
         </div>
+        <small class="text-muted">{{ job['created_at'][:10] }}</small>
+      </div>
 
-        <p class="mb-3">{{ job['description'] }}</p>
+      <hr>
 
-        <dl class="row">
-          {% if job['company'] %}
-          <dt class="col-sm-3">Organisatie</dt>
-          <dd class="col-sm-9">{{ job['company'] }}</dd>
-          {% endif %}
+      <p><strong>Uren:</strong> {{ job['hours'] }}</p>
+      <p><strong>Tarief:</strong> €{{ '%.2f'|format(job['rate']) }}/uur</p>
 
-          {% if job['location'] %}
-          <dt class="col-sm-3">Locatie</dt>
-          <dd class="col-sm-9">{{ job['location'] }}</dd>
-          {% endif %}
+      {% set cats = (job['categories'] or '').split(',') %}
+      {% if cats and cats[0] != '' %}
+        <div class="mb-3">
+          {% for c in cats %}
+            <span class="badge bg-light text-dark border">{{ c|capitalize }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
 
-          {% if job['hours'] %}
-          <dt class="col-sm-3">Uren per week</dt>
-          <dd class="col-sm-9">{{ job['hours'] }}</dd>
-          {% endif %}
+      <h5>Omschrijving</h5>
+      <p>{{ job['description'] }}</p>
 
-          {% if job['rate'] %}
-          <dt class="col-sm-3">Tarief</dt>
-          <dd class="col-sm-9">€{{ '%.2f'|format(job['rate']) }}/uur</dd>
-          {% endif %}
-
-          {% if job['duration'] %}
-          <dt class="col-sm-3">Duur</dt>
-          <dd class="col-sm-9">{{ job['duration'] }}</dd>
-          {% endif %}
-
-          {% if job['start_date'] %}
-          <dt class="col-sm-3">Startdatum</dt>
-          <dd class="col-sm-9">{{ job['start_date'] }}</dd>
-          {% endif %}
-        </dl>
-
-        {% set cats = (job['categories'] or '').split(',') %}
-        {% if cats and cats[0] != '' %}
-          <div class="mt-3">
-            <strong>Categorieën:</strong>
-            <div class="mt-1">
-              {% for c in cats %}
-                <span class="badge text-bg-light border me-1">{{ c|capitalize }}</span>
-              {% endfor %}
-            </div>
-          </div>
-        {% endif %}
+      <div class="mt-4">
+        <a href="mailto:info@detoezichthouders.nl?subject=Reactie op opdracht: {{ job['title'] }}" 
+           class="btn btn-primary">
+          Reageren op deze opdracht
+        </a>
       </div>
     </div>
   </div>
