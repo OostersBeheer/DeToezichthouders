@@ -1,4 +1,9 @@
-import os
+import os from flask import Flask, render_template, request, redirect, url_for, session
+app = Flask(__name__)
+
+# Zorg dat de sessie werkt
+app.secret_key = os.getenv("SECRET_KEY", "ZiggeZaggeNAC1912!")
+
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
