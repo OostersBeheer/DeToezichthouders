@@ -80,46 +80,49 @@ def job_detail(job_id):
 
     return render_template("job_detail.html", job=job)
 
-
-# --- Admin: nieuwe opdracht toevoegen ---
+# --- Admin login en nieuwe opdracht toevoegen ---
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    pw = request.args.get("pw")
-    if pw != os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912"):
-        return "Toegang geweigerd", 403
-
     if request.method == "POST":
-        title = request.form["title"]
-        hours = request.form.get("hours")
-        rate = request.form.get("rate")
-        description = request.form.get("description")
-        duration = request.form.get("duration")
-        start_date = request.form.get("start_date")
-        location = request.form.get("location")
-        company = request.form.get("company")
-        categories = request.form.getlist("categories")
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if "login" in request.form:  # login formulier
+            pw = request.form.get("password")
+            if pw == os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912"):
+                session["admin_logged_in"] = True
+                return redirect(url_for("admin"))
+            else:
+                return "Onjuist wachtwoord", 403
 
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("""
-            INSERT INTO jobs (title, hours, rate, description, duration, start_date, location, company, categories, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            title,
-            hours,
-            float(rate) if rate else None,
-            description,
-            duration,
-            start_date,
-            location,
-            company,
-            ",".join(categories),
-            created_at
-        ))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("index"))
+        elif "add_job" in request.form:  # nieuw job formulier
+            if not session.get("admin_logged_in"):
+                return "Toegang geweigerd", 403
+            # Haal de velden uit het formulier
+            title = request.form.get("title")
+            company = request.form.get("company")
+            location = request.form.get("location")
+            hours = request.form.get("hours")
+            rate = request.form.get("rate")
+            description = request.form.get("description")
+            categories = request.form.getlist("categories")
+
+            c = get_db().cursor()
+            c.execute(
+                "INSERT INTO jobs (title, company, location, hours, rate, description, categories, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                (title, company, location, hours, rate, description, ",".join(categories))
+            )
+            get_db().commit()
+            return redirect(url_for("index"))
+
+    if not session.get("admin_logged_in"):
+        # Login formulier
+        return render_template("admin.html", login=True)
+
+    # Vacature toevoegen formulier
+    return render_template("admin.html", login=False, categories=[
+        ("finance", "Finance"),
+        ("it", "IT"),
+        ("construction", "Construction"),
+        ("other", "Other")
+    ])
 
     return render_template("admin.html")
 
