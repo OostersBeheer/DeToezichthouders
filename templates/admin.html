@@ -1,52 +1,24 @@
-{% extends "base.html" %}
-{% block content %}
-  <div class="container mt-4">
-    <h2>Nieuwe opdracht plaatsen</h2>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Nieuwe Vacature</title>
+</head>
+<body>
+    <h1>Nieuwe Vacature Toevoegen</h1>
     <form method="post">
-      <div class="mb-3">
-        <label class="form-label">Titel</label>
-        <input type="text" name="title" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Uren</label>
-        <input type="text" name="hours" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Tarief (€ per uur)</label>
-        <input type="number" step="0.01" name="rate" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Beschrijving</label>
-        <textarea name="description" class="form-control" rows="4"></textarea>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Duur</label>
-        <input type="text" name="duration" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Startdatum</label>
-        <input type="date" name="start_date" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Locatie</label>
-        <input type="text" name="location" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Bedrijf</label>
-        <input type="text" name="company" class="form-control">
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Categorieën</label>
-        <div class="d-flex flex-wrap gap-2">
-          {% for slug, label in categories %}
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="categories" value="{{ slug }}">
-              <label class="form-check-label">{{ label }}</label>
-            </div>
-          {% endfor %}
-        </div>
-      </div>
-      <button type="submit" class="btn btn-primary">Plaats opdracht</button>
+        <input type="text" name="title" placeholder="Titel" required><br>
+        <input type="text" name="hours" placeholder="Uren per week"><br>
+        <input type="text" name="rate" placeholder="Tarief"><br>
+        <textarea name="description" placeholder="Beschrijving"></textarea><br>
+        <input type="text" name="duration" placeholder="Duur"><br>
+        <input type="date" name="start_date" placeholder="Startdatum"><br>
+        <input type="text" name="location" placeholder="Locatie"><br>
+        <input type="text" name="company" placeholder="Bedrijf"><br>
+        <input type="text" name="categories" placeholder="Categorieën (comma-separated)"><br>
+        <input type="submit" value="Plaats vacature">
     </form>
-  </div>
-{% endblock %}
+    <br>
+    <a href="{{ url_for('admin_logout') }}">Uitloggen</a>
+</body>
+</html>
