@@ -80,7 +80,7 @@ def job_detail(job_id):
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     pw = request.args.get("pw")
-    if pw != os.getenv("ADMIN_PASSWORD", "geheim"):
+    if pw != os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912"):
         return "Toegang geweigerd", 403
 
     if request.method == "POST":
