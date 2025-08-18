@@ -1,41 +1,40 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from datetime import datetime
-from dotenv import load_dotenv
-
-# Load .env bestand
-load_dotenv()
+from flask import Flask, request, session, redirect, url_for, render_template
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "defaultsecretkey")
+
+# Secret key en database path uit environment variables
+app.secret_key = os.getenv("SECRET_KEY", "ZiggeZaggeNAC1912!")
 DB_PATH = os.getenv("DB_PATH", "database.db")
 
-# --- Database check / aanmaken ---
+# --- Database check & aanmaken ---
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        hours TEXT,
-        rate REAL,
-        description TEXT,
-        duration TEXT,
-        start_date TEXT,
-        location TEXT,
-        company TEXT,
-        categories TEXT,
-        created_at TEXT
-    )
-    """)
-    conn.commit()
-    conn.close()
+    if not os.path.exists(DB_PATH):
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                hours TEXT,
+                rate REAL,
+                description TEXT,
+                duration TEXT,
+                start_date TEXT,
+                location TEXT,
+                company TEXT,
+                categories TEXT,
+                created_at TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
 
 init_db()
 
-# --- Homepage: lijst van vacatures ---
+# --- Index route ---
 @app.route("/")
 def index():
     conn = sqlite3.connect(DB_PATH)
@@ -45,12 +44,12 @@ def index():
     conn.close()
     return render_template("index.html", jobs=jobs)
 
-# --- Admin login en nieuwe vacature toevoegen ---
+# --- Admin login en vacatures toevoegen ---
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    if request.method == "POST" and not session.get("admin_logged_in"):
+    if request.method == "POST":
         pw = request.form.get("password")
-        if pw == os.getenv("ADMIN_PASSWORD"):
+        if pw == os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912!"):
             session["admin_logged_in"] = True
             return redirect(url_for("admin"))
         else:
@@ -65,7 +64,7 @@ def admin():
         '''
 
     # Vacature toevoegen
-    if request.method == "POST" and session.get("admin_logged_in"):
+    if request.args.get("action") == "add" and request.method == "POST":
         title = request.form["title"]
         hours = request.form.get("hours")
         rate = request.form.get("rate")
@@ -101,8 +100,8 @@ def admin():
     return render_template("admin.html")
 
 # --- Admin logout ---
-@app.route("/admin/logout")
-def admin_logout():
+@app.route("/logout")
+def logout():
     session.pop("admin_logged_in", None)
     return redirect(url_for("index"))
 
