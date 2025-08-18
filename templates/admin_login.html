@@ -1,7 +1,21 @@
-{% extends "base.html" %}
-{% block content %}
-  <h1 class="h4 mb-3">Admin</h1>
-  <p>Gebruik de adminlink met je wachtwoord om opdrachten te beheren. Voorbeeld:</p>
-  <pre class="bg-light p-3 border rounded">/admin?pw=JOUW_WACHTWOORD</pre>
-  <p>Stel het wachtwoord in via het bestand <code>.env</code> (variabele <code>ADMIN_PASSWORD</code>).</p>
-{% endblock %}
+# --- Admin login en nieuwe opdracht toevoegen ---
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    if request.method == "POST":
+        pw = request.form.get("password")
+        if pw == os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912"):
+            session["admin_logged_in"] = True
+            return redirect(url_for("admin"))
+        else:
+            return "Onjuist wachtwoord", 403
+
+    if not session.get("admin_logged_in"):
+        return '''
+            <form method="post">
+                <input type="password" name="password" placeholder="Admin wachtwoord">
+                <input type="submit" value="Login">
+            </form>
+        '''
+
+    # Hier komt de code voor het plaatsen van een nieuwe opdracht
+    return render_template("admin.html")
