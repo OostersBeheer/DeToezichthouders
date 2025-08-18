@@ -3,22 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin - Nieuwe Vacature</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
+        h1 { text-align: center; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        input, textarea, select { padding: 5px; font-size: 1em; }
+        input[type="submit"] { width: 150px; align-self: center; padding: 10px; }
+    </style>
 </head>
 <body>
     <h1>Nieuwe Vacature Toevoegen</h1>
-    <form method="post">
-        <input type="text" name="title" placeholder="Titel" required><br>
-        <input type="text" name="hours" placeholder="Uren per week"><br>
-        <input type="text" name="rate" placeholder="Tarief"><br>
-        <textarea name="description" placeholder="Beschrijving"></textarea><br>
-        <input type="text" name="duration" placeholder="Duur"><br>
-        <input type="date" name="start_date" placeholder="Startdatum"><br>
-        <input type="text" name="location" placeholder="Locatie"><br>
-        <input type="text" name="company" placeholder="Bedrijf"><br>
-        <input type="text" name="categories" placeholder="Categorieën (comma-separated)"><br>
-        <input type="submit" value="Plaats vacature">
+    <form method="post" action="{{ url_for('admin') }}">
+        <input type="text" name="title" placeholder="Functietitel" required>
+        <input type="text" name="hours" placeholder="Aantal uren">
+        <input type="text" name="rate" placeholder="Salaris/uur">
+        <textarea name="description" placeholder="Omschrijving" rows="4"></textarea>
+        <input type="text" name="duration" placeholder="Duur opdracht">
+        <input type="date" name="start_date" placeholder="Startdatum">
+        <input type="text" name="location" placeholder="Locatie">
+        <input type="text" name="company" placeholder="Bedrijf">
+        <input type="text" name="categories" placeholder="Categorieën, gescheiden door komma's">
+        <input type="submit" value="Toevoegen">
     </form>
-    <br>
-    <a href="{{ url_for('admin_logout') }}">Uitloggen</a>
+    <p style="text-align:center;"><a href="{{ url_for('logout') }}">Uitloggen</a></p>
+    <p style="text-align:center;"><a href="{{ url_for('index') }}">Terug naar vacatures</a></p>
 </body>
 </html>
