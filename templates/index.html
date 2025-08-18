@@ -3,18 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Vacatures</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+        h1 { text-align: center; }
+        .job { border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .job:last-child { border: none; }
+        .job-title { font-weight: bold; font-size: 1.2em; }
+        .job-details { margin: 5px 0; font-size: 0.9em; color: #555; }
+    </style>
 </head>
 <body>
     <h1>Vacatures</h1>
     {% for job in jobs %}
-        <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
-            <h2>{{ job[1] }}</h2>
-            <p>{{ job[3] }}</p>
-            <p><strong>Uren:</strong> {{ job[2] }} | <strong>Tarief:</strong> {{ job[3] }} | <strong>Locatie:</strong> {{ job[7] }}</p>
-            <p><em>Bedrijf: {{ job[8] }} | Categorieën: {{ job[9] }}</em></p>
-            <p><small>Aangemaakt op: {{ job[10] }}</small></p>
+    <div class="job">
+        <div class="job-title">{{ job[1] }}</div>
+        <div class="job-details">
+            {{ job[7] }} | {{ job[6] }} | {{ job[2] }} uur | €{{ job[3] if job[3] else 'n.v.t.' }}
         </div>
+        <div>{{ job[4] }}</div>
+        <div><strong>Startdatum:</strong> {{ job[5] }}</div>
+        <div><strong>Bedrijf:</strong> {{ job[8] }}</div>
+        <div><strong>Categorieën:</strong> {{ job[9] }}</div>
+    </div>
+    {% else %}
+    <p>Er zijn nog geen vacatures.</p>
     {% endfor %}
-    <a href="{{ url_for('admin') }}">Admin login</a>
+    <p><a href="{{ url_for('admin') }}">Admin login</a></p>
 </body>
 </html>
