@@ -1,128 +1,134 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-import sqlite3
 import os
+import sqlite3
 from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, flash
 
+# Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "geheime_sleutel")  # Zet in Render als SECRET_KEY
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "fallback-secret-key")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
-DATABASE = "jobs.db"
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")  # Zet in Render als ADMIN_PASSWORD
+# Altijd een pad gebruiken relatief aan dit bestand
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "jobs.db")
 
+def get_conn():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row  # prettiger in templates: job['title']
+    return conn
 
 def init_db():
-    """Maakt database en tabel als die nog niet bestaat."""
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS jobs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT,
-                    hours TEXT,
-                    rate TEXT,
-                    description TEXT,
-                    duration TEXT,
-                    start_date TEXT,
-                    location TEXT,
-                    company TEXT
-                )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS applications (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    job_id INTEGER,
-                    name TEXT,
-                    email TEXT,
-                    message TEXT,
-                    date_applied TEXT
-                )''')
-    conn.commit()
-    conn.close()
+    """Maak tabellen als ze nog niet bestaan (idempotent)."""
+    with get_conn() as conn:
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                hours TEXT,
+                rate TEXT,
+                description TEXT,
+                duration TEXT,
+                start_date TEXT,
+                location TEXT,
+                company TEXT
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                phone TEXT,
+                message TEXT,
+                date_applied TEXT,
+                FOREIGN KEY(job_id) REFERENCES jobs(id)
+            )
+        """)
+        conn.commit()
 
+# >>> Kritiek: zorg dat tabellen er zijn zodra de app module geladen wordt (ook bij gunicorn)
+init_db()
 
 @app.route("/")
 def index():
-    """Toont vacatures met optionele filter."""
-    category = request.args.get("category")
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    if category:
-        c.execute("SELECT * FROM jobs WHERE location LIKE ?", (f"%{category}%",))
-    else:
-        c.execute("SELECT * FROM jobs")
-    jobs = c.fetchall()
-    conn.close()
+    # optioneel simpel zoekveld (q) over titel/bedrijf/locatie
+    q = request.args.get("q", "").strip()
+    with get_conn() as conn:
+        c = conn.cursor()
+        if q:
+            like = f"%{q}%"
+            c.execute("""
+                SELECT * FROM jobs
+                WHERE title LIKE ? OR company LIKE ? OR location LIKE ?
+                ORDER BY id DESC
+            """, (like, like, like))
+        else:
+            c.execute("SELECT * FROM jobs ORDER BY id DESC")
+        jobs = c.fetchall()
     return render_template("index.html", jobs=jobs)
-
 
 @app.route("/job/<int:job_id>", methods=["GET", "POST"])
 def job_detail(job_id):
-    """Detailpagina van vacature + reactieformulier."""
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
+    with get_conn() as conn:
+        c = conn.cursor()
+        # Haal vacature op
+        c.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
+        job = c.fetchone()
+        if not job:
+            flash("Vacature niet gevonden.", "error")
+            return redirect(url_for("index"))
 
-    # Vacature ophalen
-    c.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
-    job = c.fetchone()
+        # Verwerk reactie
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip()
+            phone = request.form.get("phone", "").strip()
+            message = request.form.get("message", "").strip()
+            if not name or not email:
+                flash("Naam en e‑mail zijn verplicht.", "error")
+            else:
+                c.execute("""
+                    INSERT INTO applications (job_id, name, email, phone, message, date_applied)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (job_id, name, email, phone, message, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                conn.commit()
+                flash("Je reactie is verzonden!", "success")
+        # (optioneel) je kunt hier reacties ophalen en meegeven aan de template
 
-    if not job:
-        conn.close()
-        flash("Vacature niet gevonden.", "error")
-        return redirect(url_for("index"))
-
-    # Reactieformulier verwerken
-    if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-        message = request.form["message"]
-
-        if not name or not email:
-            flash("Naam en e-mail zijn verplicht.", "error")
-        else:
-            c.execute('''INSERT INTO applications (job_id, name, email, message, date_applied)
-                         VALUES (?, ?, ?, ?, ?)''',
-                      (job_id, name, email, message, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            conn.commit()
-            flash("Je reactie is verzonden!", "success")
-
-    # Reacties ophalen
-    c.execute("SELECT name, message, date_applied FROM applications WHERE job_id = ?", (job_id,))
-    applications = c.fetchall()
-
-    conn.close()
-    return render_template("job_detail.html", job=job, applications=applications)
-
+    return render_template("job_detail.html", job=job)
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    """Adminpagina voor vacatures toevoegen."""
-    password = request.args.get("password")
-    if password != ADMIN_PASSWORD:
+    # Queryparameter heet 'pw' (bijv. /admin?pw=JOUW_WACHTWOORD)
+    if request.args.get("pw") != ADMIN_PASSWORD:
         return "Toegang geweigerd", 403
 
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
+    with get_conn() as conn:
+        c = conn.cursor()
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            hours = request.form.get("hours", "").strip()
+            rate = request.form.get("rate", "").strip()
+            description = request.form.get("description", "").strip()
+            duration = request.form.get("duration", "").strip()
+            start_date = request.form.get("start_date", "").strip()
+            location = request.form.get("location", "").strip()
+            company = request.form.get("company", "").strip()
 
-    if request.method == "POST":
-        title = request.form["title"]
-        hours = request.form["hours"]
-        rate = request.form["rate"]
-        description = request.form["description"]
-        duration = request.form["duration"]
-        start_date = request.form["start_date"]
-        location = request.form["location"]
-        company = request.form["company"]
+            c.execute("""
+                INSERT INTO jobs (title, hours, rate, description, duration, start_date, location, company)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (title, hours, rate, description, duration, start_date, location, company))
+            conn.commit()
+            flash("Vacature toegevoegd!", "success")
 
-        c.execute('''INSERT INTO jobs (title, hours, rate, description, duration, start_date, location, company)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                  (title, hours, rate, description, duration, start_date, location, company))
-        conn.commit()
-        flash("Vacature toegevoegd!", "success")
-
-    c.execute("SELECT * FROM jobs")
-    jobs = c.fetchall()
-    conn.close()
+        c.execute("SELECT * FROM jobs ORDER BY id DESC")
+        jobs = c.fetchall()
 
     return render_template("admin.html", jobs=jobs)
 
-
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
+    # Lokale run
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
