@@ -86,7 +86,7 @@ def admin():
     if request.method == "POST":
         if "login" in request.form:  # login formulier
             pw = request.form.get("password")
-            if pw == os.getenv("ADMIN_PASSWORD", "ZiggeZaggeNAC1912"):
+            if pw != os.getenv("ADMIN_PASSWORD"):
                 session["admin_logged_in"] = True
                 return redirect(url_for("admin"))
             else:
