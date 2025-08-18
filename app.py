@@ -21,19 +21,22 @@ def init_db():
     """Maak tabellen als ze nog niet bestaan (idempotent)."""
     with get_conn() as conn:
         c = conn.cursor()
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS jobs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                hours TEXT,
-                rate TEXT,
-                description TEXT,
-                duration TEXT,
-                start_date TEXT,
-                location TEXT,
-                company TEXT
-            )
-        """)
+c.execute("""
+    CREATE TABLE IF NOT EXISTS jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        hours TEXT,
+        rate REAL,
+        description TEXT,
+        duration TEXT,
+        start_date TEXT,
+        location TEXT,
+        company TEXT,
+        categories TEXT,
+        created_at TEXT
+    )
+""")
+
         c.execute("""
             CREATE TABLE IF NOT EXISTS applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,10 +120,22 @@ def admin():
             location = request.form.get("location", "").strip()
             company = request.form.get("company", "").strip()
 
-            c.execute("""
-                INSERT INTO jobs (title, hours, rate, description, duration, start_date, location, company)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (title, hours, rate, description, duration, start_date, location, company))
+c.execute("""
+    INSERT INTO jobs (title, hours, rate, description, duration, start_date, location, company, categories, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+""", (
+    title,
+    hours,
+    float(rate) if rate else None,
+    description,
+    duration,
+    start_date,
+    location,
+    company,
+    "",  # voorlopig geen categorieën
+    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+))
+
             conn.commit()
             flash("Vacature toegevoegd!", "success")
 
